@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hide your secret massage</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%);
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+    h1 {
+      color: #FF1493;
+      margin-bottom: 20px;
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .upload-area {
+      border: 2px dashed #FF69B4;
+      padding: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      background: #fff0f6;
+      color: #FF1493;
+      transition: 0.3s;
+    }
+    .upload-area:hover {
+      background: #FFB6C1;
+    }
+    input[type="file"], textarea, input[type="password"] {
+      width: 90%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #FF1493;
+      font-size: 16px;
+      background: #ffe6f0;
+      color: #FF1493;
+    }
+    button {
+      background-color: #FF1493;
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      margin: 10px 5px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #FF69B4;
+    }
+    canvas {
+      display: none;
+    }
+    #outputImage {
+      margin-top: 20px;
+      max-width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    #decodedMessage {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #FF1493;
+      font-size: 18px;
+      word-wrap: break-word;
+      background: #fff0f6;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    p.note {
+      margin-top: 20px;
+      color: #555;
+      font-size: 14px;
+    }
+    .heart {
+      font-size: 30px;
+      color: #FF1493;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Hide your secret massage</h1>
+
+    <div class="upload-area" id="uploadArea">
+      Drag & Drop Image Here or Click to Upload
+      <input type="file" id="imageInput" accept="image/*" style="display:none">
+    </div>
+
+    <textarea id="messageInput" placeholder="Enter your secret love message..." rows="3"></textarea><br>
+    <input type="password" id="passwordInput" placeholder="Password (optional)"><br>
+
+    <div>
+      <button onclick="encodeMessage()">Hide Message</button>
+      <button onclick="downloadImage()">Download Image</button>
+      <button onclick="decodeMessage()">Decode Message</button>
+    </div>
+
+    <canvas id="canvas"></canvas><br>
+
+    <img id="outputImage" alt="Encoded Image"><br>
+
+    <div id="decodedMessage"></div>
+
+    <p class="note">Tip: Always use PNG images to preserve your love message! share dowloaded image on whatsapp</p>
+
+<h6>devlope by @rohit chavan rc</h6>    
+    <div class="heart">❤️</div>
+  </div>
+
+<script>
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let uploadArea = document.getElementById('uploadArea');
+let fileInput = document.getElementById('imageInput');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.background = "#FFE6F0";
+});
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.background = "#fff0f6";
+});
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.background = "#fff0f6";
+    fileInput.files = e.dataTransfer.files;
+    loadImage({ target: { files: e.dataTransfer.files } });
+});
+
+fileInput.addEventListener('change', loadImage);
+function loadImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            document.getElementById('outputImage').src = canvas.toDataURL();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
+
+function encryptMessage(message, password) {
+    if (!password) return message;
+    let encrypted = "";
+    for (let i = 0; i < message.length; i++) {
+        encrypted += String.fromCharCode(message.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+    }
+    return encrypted;
+}
+
+function decryptMessage(encrypted, password) {
+    return encryptMessage(encrypted, password); // XOR encryption is reversible
+}
+
+function encodeMessage() {
+    const message = document.getElementById('messageInput').value;
+    const password = document.getElementById('passwordInput').value;
+
+    if (canvas.width === 0) {
+        alert("Please upload an image first!");
+        return;
+    }
+
+    if (!message) {
+        alert("Please enter a message to hide!");
+        return;
+    }
+
+    const secret = encryptMessage(message, password);
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imgData.data;
+
+    let messageBinary = "";
+    for (let i = 0; i < secret.length; i++) {
+        let bin = secret.charCodeAt(i).toString(2).padStart(8, '0');
+        messageBinary += bin;
+    }
+    messageBinary += "00000000"; // End marker
+
+    let dataIndex = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+        if (dataIndex < messageBinary.length) {
+            pixels[i] = (pixels[i] & 0xFE) | parseInt(messageBinary[dataIndex]);
+            dataIndex++;
+        } else {
+            break;
+        }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+
+    const outputImage = document.getElementById('outputImage');
+    outputImage.src = canvas.toDataURL();
+    alert("Your love message is hidden!");
+}
+
+function downloadImage() {
+    if (canvas.width === 0) {
+        alert("Please encode an image first!");
+        return;
+    }
+    const link = document.createElement('a');
+    link.download = 'stego_image.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+function decodeMessage() {
+    if (canvas.width === 0) {
+        alert("Please upload an image first!");
+        return;
+    }
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imgData.data;
+
+    let binaryMessage = "";
+    for (let i = 0; i < pixels.length; i += 4) {
+        binaryMessage += (pixels[i] & 1).toString();
+    }
+
+    let encrypted = "";
+    for (let i = 0; i < binaryMessage.length; i += 8) {
+        const byte = binaryMessage.substr(i, 8);
+        if (byte === "00000000") {
+            break;
+        }
+        const char = String.fromCharCode(parseInt(byte, 2));
+        encrypted += char;
+    }
+
+    const password = document.getElementById('passwordInput').value;
+    const secret = decryptMessage(encrypted, password);
+
+    document.getElementById('decodedMessage').innerText = "Decoded Message: " + secret;
+}
+</script>
+
+</body>
+</html>
